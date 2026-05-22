@@ -23,7 +23,13 @@ func envOrDefault(key, defaultVal string) string {
 
 func NewServerConfig() (*ServerConfig, error) {
 	host := envOrDefault("SERVER_HOST", "localhost")
-	portStr := envOrDefault("SERVER_PORT", "8080")
+	portStr := os.Getenv("PORT")
+	if portStr == "" {
+		portStr = envOrDefault("SERVER_PORT", "8080")
+	}
+	if os.Getenv("PORT") != "" && os.Getenv("SERVER_HOST") == "" {
+		host = "0.0.0.0"
+	}
 	port, err := strconv.Atoi(portStr)
 	if err != nil {
 		return nil, fmt.Errorf("invalid SERVER_PORT %q: %w", portStr, err)
