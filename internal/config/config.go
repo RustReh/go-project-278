@@ -11,6 +11,7 @@ type ServerConfig struct {
 	Addr         string
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
+	SentryDsn    string
 }
 
 func envOrDefault(key, defaultVal string) string {
@@ -44,10 +45,12 @@ func NewServerConfig() (*ServerConfig, error) {
 	writeTimeout := time.Duration(writeSec) * time.Second
 
 	address := fmt.Sprintf("%s:%d", host, port)
+	sentryDsn := envOrDefault("SENTRY_DSN", "")
 
 	return &ServerConfig{
 		Addr:         address,
 		ReadTimeout:  readTimeout,
 		WriteTimeout: writeTimeout,
+		SentryDsn:    sentryDsn,
 	}, nil
 }
