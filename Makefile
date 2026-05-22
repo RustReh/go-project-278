@@ -1,18 +1,13 @@
-.PHONY: build run test lint
+.PHONY: build test lint run-server
 
 build:
-	go build -o bin/gendiff ./cmd/gendiff
-
-ARGS ?=
-
-run: build
-	./bin/gendiff $(ARGS)
+	go build -o bin/server ./cmd/server
 
 test:
-	go test -v ./...
+	go test -race -count=1 ./...
 
 lint:
 	golangci-lint run ./...
 
 run-server:
-	go run main.go
+	go run ./cmd/server
