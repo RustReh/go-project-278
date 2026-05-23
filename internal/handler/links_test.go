@@ -1,0 +1,222 @@
+package handler_test
+
+import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"github.com/RustReh/go-project-278/internal/handler"
+	"github.com/RustReh/go-project-278/internal/router"
+	"github.com/RustReh/go-project-278/internal/schemas"
+	"github.com/RustReh/go-project-278/internal/service"
+	"github.com/RustReh/go-project-278/internal/testutil"
+	"github.com/gin-gonic/gin"
+)
+
+const handlerBaseURL = "https://short.io/"
+
+func setupLinksRouter(t *testing.T) (*gin.Engine, *testutil.MemRepo) {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+
+	repo := testutil.NewMemRepo()
+	svc := service.NewLinkService(repo, handlerBaseURL)
+	h := handler.NewLinksHandler(svc)
+
+	r := gin.New()
+	router.Register(r, h)
+	return r, repo
+}
+
+func TestLinks_Create_WithShortName_201(t *testing.T) {
+	r, _ := setupLinksRouter(t)
+
+	body := `{"original_url":"https://example.com/long","short_name":"exmpl"}`
+	req := httptest.NewRequest(http.MethodPost, "/api/links", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("status: got %d, want %d, body: %s", rec.Code, http.StatusCreated, rec.Body.String())
+	}
+
+	var resp schemas.LinkResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp.ShortName != "exmpl" || resp.ShortURL != "https://short.io/exmpl" {
+		t.Fatalf("got %+v", resp)
+	}
+}
+
+func TestLinks_Create_WithoutShortName_201(t *testing.T) {
+	r, _ := setupLinksRouter(t)
+
+	body := `{"original_url":"https://example.com/auto"}`
+	req := httptest.NewRequest(http.MethodPost, "/api/links", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("status: got %d, body: %s", rec.Code, rec.Body.String())
+	}
+
+	var resp schemas.LinkResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp.ShortName == "" {
+		t.Fatal("expected generated short_name")
+	}
+	if resp.ShortURL != handlerBaseURL+resp.ShortName {
+		t.Fatalf("short_url: got %q", resp.ShortURL)
+	}
+}
+
+func TestLinks_Create_Conflict_409(t *testing.T) {
+	r, _ := setupLinksRouter(t)
+
+	body := `{"original_url":"https://example.com/1","short_name":"dup"}`
+	for range 2 {
+		req := httptest.NewRequest(http.MethodPost, "/api/links", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		r.ServeHTTP(rec, req)
+		if rec.Code == http.StatusCreated {
+			continue
+		}
+		if rec.Code != http.StatusConflict {
+			t.Fatalf("status: got %d, body: %s", rec.Code, rec.Body.String())
+		}
+		return
+	}
+	t.Fatal("expected conflict on second create")
+}
+
+func TestLinks_GetAll_200(t *testing.T) {
+	r, _ := setupLinksRouter(t)
+
+	create := func(payload string) {
+		t.Helper()
+		req := httptest.NewRequest(http.MethodPost, "/api/links", bytes.NewBufferString(payload))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		r.ServeHTTP(rec, req)
+		if rec.Code != http.StatusCreated {
+			t.Fatalf("create status %d: %s", rec.Code, rec.Body.String())
+		}
+	}
+	create(`{"original_url":"https://example.com/1","short_name":"a"}`)
+	create(`{"original_url":"https://example.com/2","short_name":"b"}`)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/links", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status: got %d", rec.Code)
+	}
+	var resp []schemas.LinkResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if len(resp) != 2 {
+		t.Fatalf("len: got %d, want 2", len(resp))
+	}
+}
+
+func TestLinks_GetByID_200_and_404(t *testing.T) {
+	r, _ := setupLinksRouter(t)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/links",
+		bytes.NewBufferString(`{"original_url":"https://example.com/x","short_name":"x"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	var created schemas.LinkResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+
+	getReq := httptest.NewRequest(http.MethodGet, "/api/links/1", nil)
+	getRec := httptest.NewRecorder()
+	r.ServeHTTP(getRec, getReq)
+	if getRec.Code != http.StatusOK {
+		t.Fatalf("get status: %d, body: %s", getRec.Code, getRec.Body.String())
+	}
+
+	missReq := httptest.NewRequest(http.MethodGet, "/api/links/999", nil)
+	missRec := httptest.NewRecorder()
+	r.ServeHTTP(missRec, missReq)
+	if missRec.Code != http.StatusNotFound {
+		t.Fatalf("status: got %d, want 404", missRec.Code)
+	}
+}
+
+func TestLinks_Update_200_and_404(t *testing.T) {
+	r, _ := setupLinksRouter(t)
+
+	postReq := httptest.NewRequest(http.MethodPost, "/api/links",
+		bytes.NewBufferString(`{"original_url":"https://example.com/old","short_name":"old"}`))
+	postReq.Header.Set("Content-Type", "application/json")
+	postRec := httptest.NewRecorder()
+	r.ServeHTTP(postRec, postReq)
+
+	putReq := httptest.NewRequest(http.MethodPut, "/api/links/1",
+		bytes.NewBufferString(`{"original_url":"https://example.com/new","short_name":"new"}`))
+	putReq.Header.Set("Content-Type", "application/json")
+	putRec := httptest.NewRecorder()
+	r.ServeHTTP(putRec, putReq)
+	if putRec.Code != http.StatusOK {
+		t.Fatalf("update status: %d, body: %s", putRec.Code, putRec.Body.String())
+	}
+
+	var updated schemas.LinkResponse
+	if err := json.Unmarshal(putRec.Body.Bytes(), &updated); err != nil {
+		t.Fatal(err)
+	}
+	if updated.ShortName != "new" {
+		t.Fatalf("got %+v", updated)
+	}
+
+	missPut := httptest.NewRequest(http.MethodPut, "/api/links/999",
+		bytes.NewBufferString(`{"original_url":"https://example.com/x","short_name":"x"}`))
+	missPut.Header.Set("Content-Type", "application/json")
+	missRec := httptest.NewRecorder()
+	r.ServeHTTP(missRec, missPut)
+	if missRec.Code != http.StatusNotFound {
+		t.Fatalf("status: got %d, want 404", missRec.Code)
+	}
+}
+
+func TestLinks_Delete_204_and_404(t *testing.T) {
+	r, _ := setupLinksRouter(t)
+
+	postReq := httptest.NewRequest(http.MethodPost, "/api/links",
+		bytes.NewBufferString(`{"original_url":"https://example.com/d","short_name":"d"}`))
+	postReq.Header.Set("Content-Type", "application/json")
+	postRec := httptest.NewRecorder()
+	r.ServeHTTP(postRec, postReq)
+
+	delReq := httptest.NewRequest(http.MethodDelete, "/api/links/1", nil)
+	delRec := httptest.NewRecorder()
+	r.ServeHTTP(delRec, delReq)
+	if delRec.Code != http.StatusNoContent {
+		t.Fatalf("delete status: got %d", delRec.Code)
+	}
+	if delRec.Body.Len() != 0 {
+		t.Fatalf("expected empty body, got %q", delRec.Body.String())
+	}
+
+	missDel := httptest.NewRequest(http.MethodDelete, "/api/links/1", nil)
+	missRec := httptest.NewRecorder()
+	r.ServeHTTP(missRec, missDel)
+	if missRec.Code != http.StatusNotFound {
+		t.Fatalf("status: got %d, want 404", missRec.Code)
+	}
+}

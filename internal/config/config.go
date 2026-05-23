@@ -4,14 +4,28 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
-type ServerConfig struct {
+type AppConfig struct {
 	Addr         string
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
 	SentryDsn    string
+	DataBaseUrl  string
+	BaseURL      string
+}
+
+func normalizeBaseURL(base string) string {
+	base = strings.TrimSpace(base)
+	if base == "" {
+		return ""
+	}
+	if !strings.HasSuffix(base, "/") {
+		base += "/"
+	}
+	return base
 }
 
 func envOrDefault(key, defaultVal string) string {
@@ -21,7 +35,7 @@ func envOrDefault(key, defaultVal string) string {
 	return defaultVal
 }
 
-func NewServerConfig() (*ServerConfig, error) {
+func NewAppConfig() (*AppConfig, error) {
 	host := envOrDefault("SERVER_HOST", "localhost")
 	portStr := os.Getenv("PORT")
 	if portStr == "" {
@@ -52,11 +66,22 @@ func NewServerConfig() (*ServerConfig, error) {
 
 	address := fmt.Sprintf("%s:%d", host, port)
 	sentryDsn := envOrDefault("SENTRY_DSN", "")
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		return nil, fmt.Errorf("DATABASE_URL is required")
+	}
 
-	return &ServerConfig{
+	baseURL := normalizeBaseURL(os.Getenv("BASE_URL"))
+	if baseURL == "" {
+		return nil, fmt.Errorf("BASE_URL is required")
+	}
+
+	return &AppConfig{
 		Addr:         address,
 		ReadTimeout:  readTimeout,
 		WriteTimeout: writeTimeout,
 		SentryDsn:    sentryDsn,
+		DataBaseUrl:  databaseURL,
+		BaseURL:      baseURL,
 	}, nil
 }
