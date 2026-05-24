@@ -2,6 +2,7 @@ package testutil
 
 import (
 	"context"
+	"sort"
 
 	"github.com/RustReh/go-project-278/internal/repository"
 	"github.com/RustReh/go-project-278/internal/service/domain"
@@ -17,7 +18,16 @@ func NewMemRepo() *MemRepo {
 	return &MemRepo{links: make(map[int64]domain.Link)}
 }
 
-func (m *MemRepo) GetByID(ctx context.Context, id int64) (domain.Link, error) {
+func (m *MemRepo) sortedLinks() []domain.Link {
+	out := make([]domain.Link, 0, len(m.links))
+	for _, link := range m.links {
+		out = append(out, link)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Id < out[j].Id })
+	return out
+}
+
+func (m *MemRepo) GetByID(_ context.Context, id int64) (domain.Link, error) {
 	link, ok := m.links[id]
 	if !ok {
 		return domain.Link{}, repository.ErrNotFound
@@ -25,15 +35,23 @@ func (m *MemRepo) GetByID(ctx context.Context, id int64) (domain.Link, error) {
 	return link, nil
 }
 
-func (m *MemRepo) GetAll(ctx context.Context) ([]domain.Link, error) {
-	out := make([]domain.Link, 0, len(m.links))
-	for _, link := range m.links {
-		out = append(out, link)
-	}
-	return out, nil
+func (m *MemRepo) Count(_ context.Context) (int64, error) {
+	return int64(len(m.links)), nil
 }
 
-func (m *MemRepo) Create(ctx context.Context, vo domain.LinkShortenedVO) (domain.Link, error) {
+func (m *MemRepo) List(_ context.Context, offset, limit int) ([]domain.Link, error) {
+	all := m.sortedLinks()
+	if offset >= len(all) || limit <= 0 {
+		return []domain.Link{}, nil
+	}
+	end := offset + limit
+	if end > len(all) {
+		end = len(all)
+	}
+	return all[offset:end], nil
+}
+
+func (m *MemRepo) Create(_ context.Context, vo domain.LinkShortenedVO) (domain.Link, error) {
 	for _, link := range m.links {
 		if link.ShortName == vo.ShortName {
 			return domain.Link{}, repository.ErrConflict
@@ -51,7 +69,7 @@ func (m *MemRepo) Create(ctx context.Context, vo domain.LinkShortenedVO) (domain
 	return link, nil
 }
 
-func (m *MemRepo) Update(ctx context.Context, id int64, vo domain.LinkShortenedVO) (domain.Link, error) {
+func (m *MemRepo) Update(_ context.Context, id int64, vo domain.LinkShortenedVO) (domain.Link, error) {
 	if _, ok := m.links[id]; !ok {
 		return domain.Link{}, repository.ErrNotFound
 	}
@@ -72,7 +90,7 @@ func (m *MemRepo) Update(ctx context.Context, id int64, vo domain.LinkShortenedV
 	return link, nil
 }
 
-func (m *MemRepo) Delete(ctx context.Context, id int64) (int, error) {
+func (m *MemRepo) Delete(_ context.Context, id int64) (int, error) {
 	if _, ok := m.links[id]; !ok {
 		return 0, repository.ErrNotFound
 	}

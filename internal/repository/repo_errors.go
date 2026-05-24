@@ -27,8 +27,18 @@ func MapError(err error) error {
 		return ErrNotFound
 	}
 	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-		return ErrConflict
+	if errors.As(err, &pgErr) {
+		switch pgErr.Code {
+		case "23505":
+			return ErrConflict
+		default:
+			return fmt.Errorf(
+				"%w: postgres %s: %s",
+				ErrInternal,
+				pgErr.Code,
+				pgErr.Message,
+			)
+		}
 	}
 	return fmt.Errorf("%w: %w", ErrInternal, err)
 }

@@ -98,29 +98,46 @@ func TestGetLinkByID_NotFound(t *testing.T) {
 	}
 }
 
-func TestGetAllLinks(t *testing.T) {
+func TestListLinks(t *testing.T) {
 	svc, _ := newTestService()
 	ctx := context.Background()
 
-	if _, err := svc.CreateLink(ctx, domain.LinkVO{
-		OriginalUrl: "https://example.com/1",
-		ShortName:   "a",
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := svc.CreateLink(ctx, domain.LinkVO{
-		OriginalUrl: "https://example.com/2",
-		ShortName:   "b",
-	}); err != nil {
-		t.Fatal(err)
+	for i := 1; i <= 11; i++ {
+		name := string(rune('a' + i - 1))
+		if i > 26 {
+			name = "z"
+		}
+		if _, err := svc.CreateLink(ctx, domain.LinkVO{
+			OriginalUrl: "https://example.com/" + name,
+			ShortName:   name,
+		}); err != nil {
+			t.Fatal(err)
+		}
 	}
 
-	links, err := svc.GetAllLinks(ctx)
+	page, err := svc.ListLinks(ctx, 0, 10)
 	if err != nil {
-		t.Fatalf("GetAllLinks: %v", err)
+		t.Fatalf("ListLinks: %v", err)
 	}
-	if len(links) != 2 {
-		t.Fatalf("len: got %d, want 2", len(links))
+	if page.Total != 11 {
+		t.Fatalf("total: got %d, want 11", page.Total)
+	}
+	if len(page.Links) != 10 {
+		t.Fatalf("len: got %d, want 10", len(page.Links))
+	}
+	if page.Links[0].Id != 1 || page.Links[9].Id != 10 {
+		t.Fatalf("ids: first=%d last=%d", page.Links[0].Id, page.Links[9].Id)
+	}
+
+	page2, err := svc.ListLinks(ctx, 5, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(page2.Links) != 5 {
+		t.Fatalf("page2 len: got %d, want 5", len(page2.Links))
+	}
+	if page2.Links[0].Id != 6 || page2.Links[4].Id != 10 {
+		t.Fatalf("page2 ids: first=%d last=%d", page2.Links[0].Id, page2.Links[4].Id)
 	}
 }
 

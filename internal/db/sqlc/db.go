@@ -24,6 +24,9 @@ func New(db DBTX) *Queries {
 func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	q := Queries{db: db}
 	var err error
+	if q.countLinksStmt, err = db.PrepareContext(ctx, countLinks); err != nil {
+		return nil, fmt.Errorf("error preparing query CountLinks: %w", err)
+	}
 	if q.createLinkStmt, err = db.PrepareContext(ctx, createLink); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateLink: %w", err)
 	}
@@ -33,8 +36,8 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getLinkByIDStmt, err = db.PrepareContext(ctx, getLinkByID); err != nil {
 		return nil, fmt.Errorf("error preparing query GetLinkByID: %w", err)
 	}
-	if q.getLinksStmt, err = db.PrepareContext(ctx, getLinks); err != nil {
-		return nil, fmt.Errorf("error preparing query GetLinks: %w", err)
+	if q.listLinksStmt, err = db.PrepareContext(ctx, listLinks); err != nil {
+		return nil, fmt.Errorf("error preparing query ListLinks: %w", err)
 	}
 	if q.updateLinkStmt, err = db.PrepareContext(ctx, updateLink); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateLink: %w", err)
@@ -44,6 +47,11 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 
 func (q *Queries) Close() error {
 	var err error
+	if q.countLinksStmt != nil {
+		if cerr := q.countLinksStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing countLinksStmt: %w", cerr)
+		}
+	}
 	if q.createLinkStmt != nil {
 		if cerr := q.createLinkStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing createLinkStmt: %w", cerr)
@@ -59,9 +67,9 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getLinkByIDStmt: %w", cerr)
 		}
 	}
-	if q.getLinksStmt != nil {
-		if cerr := q.getLinksStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing getLinksStmt: %w", cerr)
+	if q.listLinksStmt != nil {
+		if cerr := q.listLinksStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listLinksStmt: %w", cerr)
 		}
 	}
 	if q.updateLinkStmt != nil {
@@ -108,10 +116,11 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 type Queries struct {
 	db              DBTX
 	tx              *sql.Tx
+	countLinksStmt  *sql.Stmt
 	createLinkStmt  *sql.Stmt
 	deleteLinkStmt  *sql.Stmt
 	getLinkByIDStmt *sql.Stmt
-	getLinksStmt    *sql.Stmt
+	listLinksStmt   *sql.Stmt
 	updateLinkStmt  *sql.Stmt
 }
 
@@ -119,10 +128,11 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
 		db:              tx,
 		tx:              tx,
+		countLinksStmt:  q.countLinksStmt,
 		createLinkStmt:  q.createLinkStmt,
 		deleteLinkStmt:  q.deleteLinkStmt,
 		getLinkByIDStmt: q.getLinkByIDStmt,
-		getLinksStmt:    q.getLinksStmt,
+		listLinksStmt:   q.listLinksStmt,
 		updateLinkStmt:  q.updateLinkStmt,
 	}
 }

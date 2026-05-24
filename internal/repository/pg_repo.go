@@ -38,8 +38,19 @@ func (repo *PostgresRepo) GetByID(ctx context.Context, id int64) (domain.Link, e
 	return toDomain(link), nil
 }
 
-func (repo *PostgresRepo) GetAll(ctx context.Context) ([]domain.Link, error) {
-	rows, err := repo.q.GetLinks(ctx)
+func (repo *PostgresRepo) Count(ctx context.Context) (int64, error) {
+	count, err := repo.q.CountLinks(ctx)
+	if err != nil {
+		return 0, MapError(err)
+	}
+	return count, nil
+}
+
+func (repo *PostgresRepo) List(ctx context.Context, offset, limit int) ([]domain.Link, error) {
+	rows, err := repo.q.ListLinks(ctx, sqlc.ListLinksParams{
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	})
 	if err != nil {
 		return nil, MapError(err)
 	}

@@ -177,17 +177,51 @@ func (s *LinkService) GetLinkByID(ctx context.Context, id int64) (domain.Link, e
 	return link, nil
 }
 
-func (s *LinkService) GetAllLinks(ctx context.Context) ([]domain.Link, error) {
-	links, err := s.repo.GetAll(ctx)
+// LinksPage — страница списка ссылок для пагинации.
+type LinksPage struct {
+	Links []domain.Link
+	Total int64
+	Start int
+	End   int
+}
+
+func (s *LinkService) ListLinks(ctx context.Context, start, end int) (LinksPage, error) {
+	limit := end - start
+	if limit < 0 {
+		return LinksPage{}, apperr.Validation("invalid range", map[string]any{"start": start, "end": end})
+	}
+
+	total, err := s.repo.Count(ctx)
 	if err != nil {
-		return nil, apperr.WithPayload(
+		return LinksPage{}, apperr.WithPayload(
 			apperr.CodeInternal,
-			"Error while list links",
+			"Error while count links",
 			nil,
 			err,
 		)
 	}
-	return links, nil
+
+	var links []domain.Link
+	if start < int(total) && limit > 0 {
+		links, err = s.repo.List(ctx, start, limit)
+		if err != nil {
+			return LinksPage{}, apperr.WithPayload(
+				apperr.CodeInternal,
+				"Error while list links",
+				map[string]any{"start": start, "end": end},
+				err,
+			)
+		}
+	} else {
+		links = []domain.Link{}
+	}
+
+	return LinksPage{
+		Links: links,
+		Total: total,
+		Start: start,
+		End:   end,
+	}, nil
 }
 
 func (s *LinkService) createWithGeneratedShortName(ctx context.Context, linkVO domain.LinkVO) (domain.Link, error) {

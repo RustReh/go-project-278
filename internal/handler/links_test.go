@@ -113,12 +113,15 @@ func TestLinks_GetAll_200(t *testing.T) {
 	create(`{"original_url":"https://example.com/1","short_name":"a"}`)
 	create(`{"original_url":"https://example.com/2","short_name":"b"}`)
 
-	req := httptest.NewRequest(http.MethodGet, "/api/links", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/links?range=[0,10]", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
-		t.Fatalf("status: got %d", rec.Code)
+		t.Fatalf("status: got %d, body: %s", rec.Code, rec.Body.String())
+	}
+	if got := rec.Header().Get("Content-Range"); got != "links 0-10/2" {
+		t.Fatalf("Content-Range: got %q, want links 0-10/2", got)
 	}
 	var resp []schemas.LinkResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
@@ -126,6 +129,76 @@ func TestLinks_GetAll_200(t *testing.T) {
 	}
 	if len(resp) != 2 {
 		t.Fatalf("len: got %d, want 2", len(resp))
+	}
+}
+
+func TestLinks_GetAll_Pagination(t *testing.T) {
+	r, _ := setupLinksRouter(t)
+
+	for i := 1; i <= 11; i++ {
+		payload := `{"original_url":"https://example.com/` + string(rune('0'+i%10)) + `","short_name":"l` + string(rune('a'+i-1)) + `"}`
+		req := httptest.NewRequest(http.MethodPost, "/api/links", bytes.NewBufferString(payload))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		r.ServeHTTP(rec, req)
+		if rec.Code != http.StatusCreated {
+			t.Fatalf("create %d: status %d %s", i, rec.Code, rec.Body.String())
+		}
+	}
+
+	t.Run("first page", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/links?range=[0,10]", nil)
+		rec := httptest.NewRecorder()
+		r.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status: %d", rec.Code)
+		}
+		if got := rec.Header().Get("Content-Range"); got != "links 0-10/11" {
+			t.Fatalf("Content-Range: got %q", got)
+		}
+		var resp []schemas.LinkResponse
+		if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+			t.Fatal(err)
+		}
+		if len(resp) != 10 {
+			t.Fatalf("len: got %d, want 10", len(resp))
+		}
+		if resp[0].ID != 1 || resp[9].ID != 10 {
+			t.Fatalf("ids: %d-%d", resp[0].ID, resp[9].ID)
+		}
+	})
+
+	t.Run("second slice", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/links?range=[5,10]", nil)
+		rec := httptest.NewRecorder()
+		r.ServeHTTP(rec, req)
+
+		if got := rec.Header().Get("Content-Range"); got != "links 5-10/11" {
+			t.Fatalf("Content-Range: got %q", got)
+		}
+		var resp []schemas.LinkResponse
+		if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+			t.Fatal(err)
+		}
+		if len(resp) != 5 {
+			t.Fatalf("len: got %d, want 5", len(resp))
+		}
+		if resp[0].ID != 6 || resp[4].ID != 10 {
+			t.Fatalf("ids: %d-%d", resp[0].ID, resp[4].ID)
+		}
+	})
+}
+
+func TestLinks_GetAll_MissingRange_400(t *testing.T) {
+	r, _ := setupLinksRouter(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/links", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status: got %d, want 400", rec.Code)
 	}
 }
 

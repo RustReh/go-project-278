@@ -2,9 +2,11 @@ package main
 
 import (
 	"log"
+	"time"
 
 	"github.com/RustReh/go-project-278/internal/app"
 	"github.com/RustReh/go-project-278/internal/config"
+	"github.com/getsentry/sentry-go"
 	"github.com/joho/godotenv"
 )
 
@@ -24,6 +26,7 @@ func main() {
 		if err := application.Close(); err != nil {
 			log.Printf("close application: %v", err)
 		}
+		sentry.Flush(2 * time.Second)
 	}()
 
 	log.Printf("Starting server at %s", cfg.Addr)

@@ -17,17 +17,26 @@ func NewLinksHandler(linkService *service.LinkService) *LinksHandler {
 	return &LinksHandler{service: linkService}
 }
 
+// GetAll — GET /api/links?range=[start,end]
 func (h *LinksHandler) GetAll(c *gin.Context) {
-	links, err := h.service.GetAllLinks(c.Request.Context())
+	start, end, err := parseRangeQuery(c.Query("range"))
 	if err != nil {
 		writeAppError(c, err)
 		return
 	}
 
-	resp := make([]schemas.LinkResponse, 0, len(links))
-	for _, link := range links {
+	page, err := h.service.ListLinks(c.Request.Context(), start, end)
+	if err != nil {
+		writeAppError(c, err)
+		return
+	}
+
+	resp := make([]schemas.LinkResponse, 0, len(page.Links))
+	for _, link := range page.Links {
 		resp = append(resp, toLinkResponse(link))
 	}
+
+	c.Header("Content-Range", contentRangeHeader(page.Start, page.End, page.Total))
 	c.JSON(http.StatusOK, resp)
 }
 

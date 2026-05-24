@@ -8,9 +8,14 @@ SELECT id, original_url, short_name, short_url, created_at, updated_at
 FROM links
 WHERE id = $1;
 
--- name: GetLinks :many
+-- name: CountLinks :one
+SELECT count(*)::bigint AS count FROM links;
+
+-- name: ListLinks :many
 SELECT id, original_url, short_name, short_url, created_at, updated_at
-FROM links;
+FROM links
+ORDER BY id ASC
+LIMIT $1 OFFSET $2;
 
 -- name: UpdateLink :one
 UPDATE links
