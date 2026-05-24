@@ -15,6 +15,7 @@ import (
 	"github.com/RustReh/go-project-278/internal/service"
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -43,10 +44,14 @@ func Setup(cfg *config.AppConfig) (*App, error) {
 	repo := repository.NewPostgresRepo(sqlDB)
 	linkService := service.NewLinkService(repo, cfg.BaseURL)
 	linksHandler := handler.NewLinksHandler(linkService)
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowOrigins = []string{cfg.CORSOrigin}
+	corsConfig.ExposeHeaders = []string{"Content-Range"}
 
 	engine := gin.New()
 	engine.Use(gin.Recovery())
 	engine.Use(gin.Logger())
+	engine.Use(cors.New(corsConfig))
 	engine.Use(sentrygin.New(sentrygin.Options{Repanic: true}))
 
 	router.Register(engine, linksHandler)

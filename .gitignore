@@ -4,3 +4,5 @@
 # Собранные бинарники — не коммитим; bin/run.sh — в репозитории
 bin/*
 !bin/run.sh
+
+node_modules/

@@ -15,6 +15,7 @@ type AppConfig struct {
 	SentryDsn    string
 	DataBaseUrl  string
 	BaseURL      string
+	CORSOrigin   string
 }
 
 func normalizeBaseURL(base string) string {
@@ -75,6 +76,7 @@ func NewAppConfig() (*AppConfig, error) {
 	if baseURL == "" {
 		return nil, fmt.Errorf("BASE_URL is required")
 	}
+	corsOrigin := envOrDefault("CORS_ORIGIN", "http://localhost:5173")
 
 	return &AppConfig{
 		Addr:         address,
@@ -83,5 +85,6 @@ func NewAppConfig() (*AppConfig, error) {
 		SentryDsn:    sentryDsn,
 		DataBaseUrl:  databaseURL,
 		BaseURL:      baseURL,
+		CORSOrigin:   corsOrigin,
 	}, nil
 }
