@@ -24,17 +24,29 @@ func New(db DBTX) *Queries {
 func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	q := Queries{db: db}
 	var err error
+	if q.countLinkVisitsStmt, err = db.PrepareContext(ctx, countLinkVisits); err != nil {
+		return nil, fmt.Errorf("error preparing query CountLinkVisits: %w", err)
+	}
 	if q.countLinksStmt, err = db.PrepareContext(ctx, countLinks); err != nil {
 		return nil, fmt.Errorf("error preparing query CountLinks: %w", err)
 	}
 	if q.createLinkStmt, err = db.PrepareContext(ctx, createLink); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateLink: %w", err)
 	}
+	if q.createLinkVisitStmt, err = db.PrepareContext(ctx, createLinkVisit); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateLinkVisit: %w", err)
+	}
 	if q.deleteLinkStmt, err = db.PrepareContext(ctx, deleteLink); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteLink: %w", err)
 	}
 	if q.getLinkByIDStmt, err = db.PrepareContext(ctx, getLinkByID); err != nil {
 		return nil, fmt.Errorf("error preparing query GetLinkByID: %w", err)
+	}
+	if q.getLinkByShortNameStmt, err = db.PrepareContext(ctx, getLinkByShortName); err != nil {
+		return nil, fmt.Errorf("error preparing query GetLinkByShortName: %w", err)
+	}
+	if q.listLinkVisitsStmt, err = db.PrepareContext(ctx, listLinkVisits); err != nil {
+		return nil, fmt.Errorf("error preparing query ListLinkVisits: %w", err)
 	}
 	if q.listLinksStmt, err = db.PrepareContext(ctx, listLinks); err != nil {
 		return nil, fmt.Errorf("error preparing query ListLinks: %w", err)
@@ -47,6 +59,11 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 
 func (q *Queries) Close() error {
 	var err error
+	if q.countLinkVisitsStmt != nil {
+		if cerr := q.countLinkVisitsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing countLinkVisitsStmt: %w", cerr)
+		}
+	}
 	if q.countLinksStmt != nil {
 		if cerr := q.countLinksStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing countLinksStmt: %w", cerr)
@@ -57,6 +74,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing createLinkStmt: %w", cerr)
 		}
 	}
+	if q.createLinkVisitStmt != nil {
+		if cerr := q.createLinkVisitStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createLinkVisitStmt: %w", cerr)
+		}
+	}
 	if q.deleteLinkStmt != nil {
 		if cerr := q.deleteLinkStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing deleteLinkStmt: %w", cerr)
@@ -65,6 +87,16 @@ func (q *Queries) Close() error {
 	if q.getLinkByIDStmt != nil {
 		if cerr := q.getLinkByIDStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getLinkByIDStmt: %w", cerr)
+		}
+	}
+	if q.getLinkByShortNameStmt != nil {
+		if cerr := q.getLinkByShortNameStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getLinkByShortNameStmt: %w", cerr)
+		}
+	}
+	if q.listLinkVisitsStmt != nil {
+		if cerr := q.listLinkVisitsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listLinkVisitsStmt: %w", cerr)
 		}
 	}
 	if q.listLinksStmt != nil {
@@ -114,25 +146,33 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 }
 
 type Queries struct {
-	db              DBTX
-	tx              *sql.Tx
-	countLinksStmt  *sql.Stmt
-	createLinkStmt  *sql.Stmt
-	deleteLinkStmt  *sql.Stmt
-	getLinkByIDStmt *sql.Stmt
-	listLinksStmt   *sql.Stmt
-	updateLinkStmt  *sql.Stmt
+	db                     DBTX
+	tx                     *sql.Tx
+	countLinkVisitsStmt    *sql.Stmt
+	countLinksStmt         *sql.Stmt
+	createLinkStmt         *sql.Stmt
+	createLinkVisitStmt    *sql.Stmt
+	deleteLinkStmt         *sql.Stmt
+	getLinkByIDStmt        *sql.Stmt
+	getLinkByShortNameStmt *sql.Stmt
+	listLinkVisitsStmt     *sql.Stmt
+	listLinksStmt          *sql.Stmt
+	updateLinkStmt         *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
-		db:              tx,
-		tx:              tx,
-		countLinksStmt:  q.countLinksStmt,
-		createLinkStmt:  q.createLinkStmt,
-		deleteLinkStmt:  q.deleteLinkStmt,
-		getLinkByIDStmt: q.getLinkByIDStmt,
-		listLinksStmt:   q.listLinksStmt,
-		updateLinkStmt:  q.updateLinkStmt,
+		db:                     tx,
+		tx:                     tx,
+		countLinkVisitsStmt:    q.countLinkVisitsStmt,
+		countLinksStmt:         q.countLinksStmt,
+		createLinkStmt:         q.createLinkStmt,
+		createLinkVisitStmt:    q.createLinkVisitStmt,
+		deleteLinkStmt:         q.deleteLinkStmt,
+		getLinkByIDStmt:        q.getLinkByIDStmt,
+		getLinkByShortNameStmt: q.getLinkByShortNameStmt,
+		listLinkVisitsStmt:     q.listLinkVisitsStmt,
+		listLinksStmt:          q.listLinksStmt,
+		updateLinkStmt:         q.updateLinkStmt,
 	}
 }

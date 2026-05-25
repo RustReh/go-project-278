@@ -24,6 +24,18 @@ func toDomain(dbLink sqlc.Link) domain.Link {
 	}
 }
 
+func visitToDomain(v sqlc.LinkVisit) domain.LinkVisit {
+	return domain.LinkVisit{
+		Id:        v.ID,
+		LinkId:    v.LinkID,
+		Ip:        v.Ip,
+		UserAgent: v.UserAgent,
+		Referer:   v.Referer,
+		Status:    int(v.Status),
+		CreatedAt: v.CreatedAt,
+	}
+}
+
 func NewPostgresRepo(db *sql.DB) *PostgresRepo {
 	return &PostgresRepo{
 		q: sqlc.New(db),
@@ -32,6 +44,14 @@ func NewPostgresRepo(db *sql.DB) *PostgresRepo {
 
 func (repo *PostgresRepo) GetByID(ctx context.Context, id int64) (domain.Link, error) {
 	link, err := repo.q.GetLinkByID(ctx, id)
+	if err != nil {
+		return domain.Link{}, MapError(err)
+	}
+	return toDomain(link), nil
+}
+
+func (repo *PostgresRepo) GetByShortName(ctx context.Context, shortName string) (domain.Link, error) {
+	link, err := repo.q.GetLinkByShortName(ctx, shortName)
 	if err != nil {
 		return domain.Link{}, MapError(err)
 	}
@@ -93,4 +113,42 @@ func (repo *PostgresRepo) Delete(ctx context.Context, id int64) (int, error) {
 		return 0, MapError(err)
 	}
 	return int(rows), nil
+}
+
+func (repo *PostgresRepo) CreateVisit(ctx context.Context, vo domain.LinkVisitVO) (domain.LinkVisit, error) {
+	visit, err := repo.q.CreateLinkVisit(ctx, sqlc.CreateLinkVisitParams{
+		LinkID:    vo.LinkId,
+		Ip:        vo.Ip,
+		UserAgent: vo.UserAgent,
+		Referer:   vo.Referer,
+		Status:    int32(vo.Status),
+	})
+	if err != nil {
+		return domain.LinkVisit{}, MapError(err)
+	}
+	return visitToDomain(visit), nil
+}
+
+func (repo *PostgresRepo) CountVisits(ctx context.Context) (int64, error) {
+	count, err := repo.q.CountLinkVisits(ctx)
+	if err != nil {
+		return 0, MapError(err)
+	}
+	return count, nil
+}
+
+func (repo *PostgresRepo) ListVisits(ctx context.Context, offset, limit int) ([]domain.LinkVisit, error) {
+	rows, err := repo.q.ListLinkVisits(ctx, sqlc.ListLinkVisitsParams{
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	})
+	if err != nil {
+		return nil, MapError(err)
+	}
+
+	visits := make([]domain.LinkVisit, 0, len(rows))
+	for _, row := range rows {
+		visits = append(visits, visitToDomain(row))
+	}
+	return visits, nil
 }

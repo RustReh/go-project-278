@@ -42,8 +42,28 @@ func TestParseRangeQuery(t *testing.T) {
 	}
 }
 
+func TestParseListRange_PrefersQuery(t *testing.T) {
+	start, end, err := parseListRange("[0,5]", "[10,20]")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if start != 0 || end != 5 {
+		t.Fatalf("got [%d,%d), want [0,5)", start, end)
+	}
+}
+
+func TestParseListRange_FallsBackToHeader(t *testing.T) {
+	start, end, err := parseListRange("", "[10,20]")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if start != 10 || end != 20 {
+		t.Fatalf("got [%d,%d)", start, end)
+	}
+}
+
 func TestContentRangeHeader(t *testing.T) {
-	got := contentRangeHeader(0, 10, 42)
+	got := contentRangeHeader("links", 0, 10, 42)
 	want := "links 0-10/42"
 	if got != want {
 		t.Fatalf("got %q, want %q", got, want)

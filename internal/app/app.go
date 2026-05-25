@@ -43,9 +43,13 @@ func Setup(cfg *config.AppConfig) (*App, error) {
 
 	repo := repository.NewPostgresRepo(sqlDB)
 	linkService := service.NewLinkService(repo, cfg.BaseURL)
+	visitService := service.NewVisitService(repo)
 	linksHandler := handler.NewLinksHandler(linkService)
+	visitsHandler := handler.NewLinkVisitsHandler(visitService)
+	redirectHandler := handler.NewRedirectHandler(visitService)
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowOrigins = []string{cfg.CORSOrigin}
+	corsConfig.AllowHeaders = append(corsConfig.AllowHeaders, "Range")
 	corsConfig.ExposeHeaders = []string{"Content-Range"}
 
 	engine := gin.New()
@@ -54,7 +58,7 @@ func Setup(cfg *config.AppConfig) (*App, error) {
 	engine.Use(cors.New(corsConfig))
 	engine.Use(sentrygin.New(sentrygin.Options{Repanic: true}))
 
-	router.Register(engine, linksHandler)
+	router.Register(engine, linksHandler, visitsHandler, redirectHandler)
 
 	return &App{
 		Server: &http.Server{

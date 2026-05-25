@@ -36,7 +36,7 @@ func (h *LinksHandler) GetAll(c *gin.Context) {
 		resp = append(resp, toLinkResponse(link))
 	}
 
-	c.Header("Content-Range", contentRangeHeader(page.Start, page.End, page.Total))
+	c.Header("Content-Range", contentRangeHeader("links", page.Start, page.End, page.Total))
 	c.JSON(http.StatusOK, resp)
 }
 

@@ -22,3 +22,12 @@ type CreateUpdateLinkRequest struct {
 	OriginalURL string `json:"original_url"`
 	ShortName   string `json:"short_name"`
 }
+
+type LinkVisitResponse struct {
+	ID        int64  `json:"id"`
+	LinkID    int64  `json:"link_id"`
+	CreatedAt string `json:"created_at"`
+	IP        string `json:"ip"`
+	UserAgent string `json:"user_agent"`
+	Status    int    `json:"status"`
+}

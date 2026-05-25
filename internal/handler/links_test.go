@@ -7,31 +7,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/RustReh/go-project-278/internal/handler"
-	"github.com/RustReh/go-project-278/internal/router"
 	"github.com/RustReh/go-project-278/internal/schemas"
-	"github.com/RustReh/go-project-278/internal/service"
-	"github.com/RustReh/go-project-278/internal/testutil"
-	"github.com/gin-gonic/gin"
 )
 
-const handlerBaseURL = "https://short.io/"
-
-func setupLinksRouter(t *testing.T) (*gin.Engine, *testutil.MemRepo) {
-	t.Helper()
-	gin.SetMode(gin.TestMode)
-
-	repo := testutil.NewMemRepo()
-	svc := service.NewLinkService(repo, handlerBaseURL)
-	h := handler.NewLinksHandler(svc)
-
-	r := gin.New()
-	router.Register(r, h)
-	return r, repo
-}
-
 func TestLinks_Create_WithShortName_201(t *testing.T) {
-	r, _ := setupLinksRouter(t)
+	r, _ := setupTestRouter(t)
 
 	body := `{"original_url":"https://example.com/long","short_name":"exmpl"}`
 	req := httptest.NewRequest(http.MethodPost, "/api/links", bytes.NewBufferString(body))
@@ -53,7 +33,7 @@ func TestLinks_Create_WithShortName_201(t *testing.T) {
 }
 
 func TestLinks_Create_WithoutShortName_201(t *testing.T) {
-	r, _ := setupLinksRouter(t)
+	r, _ := setupTestRouter(t)
 
 	body := `{"original_url":"https://example.com/auto"}`
 	req := httptest.NewRequest(http.MethodPost, "/api/links", bytes.NewBufferString(body))
@@ -78,7 +58,7 @@ func TestLinks_Create_WithoutShortName_201(t *testing.T) {
 }
 
 func TestLinks_Create_Conflict_409(t *testing.T) {
-	r, _ := setupLinksRouter(t)
+	r, _ := setupTestRouter(t)
 
 	body := `{"original_url":"https://example.com/1","short_name":"dup"}`
 	for range 2 {
@@ -98,7 +78,7 @@ func TestLinks_Create_Conflict_409(t *testing.T) {
 }
 
 func TestLinks_GetAll_200(t *testing.T) {
-	r, _ := setupLinksRouter(t)
+	r, _ := setupTestRouter(t)
 
 	create := func(payload string) {
 		t.Helper()
@@ -133,7 +113,7 @@ func TestLinks_GetAll_200(t *testing.T) {
 }
 
 func TestLinks_GetAll_Pagination(t *testing.T) {
-	r, _ := setupLinksRouter(t)
+	r, _ := setupTestRouter(t)
 
 	for i := 1; i <= 11; i++ {
 		payload := `{"original_url":"https://example.com/` + string(rune('0'+i%10)) + `","short_name":"l` + string(rune('a'+i-1)) + `"}`
@@ -191,7 +171,7 @@ func TestLinks_GetAll_Pagination(t *testing.T) {
 }
 
 func TestLinks_GetAll_MissingRange_400(t *testing.T) {
-	r, _ := setupLinksRouter(t)
+	r, _ := setupTestRouter(t)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/links", nil)
 	rec := httptest.NewRecorder()
@@ -203,7 +183,7 @@ func TestLinks_GetAll_MissingRange_400(t *testing.T) {
 }
 
 func TestLinks_GetByID_200_and_404(t *testing.T) {
-	r, _ := setupLinksRouter(t)
+	r, _ := setupTestRouter(t)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/links",
 		bytes.NewBufferString(`{"original_url":"https://example.com/x","short_name":"x"}`))
@@ -232,7 +212,7 @@ func TestLinks_GetByID_200_and_404(t *testing.T) {
 }
 
 func TestLinks_Update_200_and_404(t *testing.T) {
-	r, _ := setupLinksRouter(t)
+	r, _ := setupTestRouter(t)
 
 	postReq := httptest.NewRequest(http.MethodPost, "/api/links",
 		bytes.NewBufferString(`{"original_url":"https://example.com/old","short_name":"old"}`))
@@ -268,7 +248,7 @@ func TestLinks_Update_200_and_404(t *testing.T) {
 }
 
 func TestLinks_Delete_204_and_404(t *testing.T) {
-	r, _ := setupLinksRouter(t)
+	r, _ := setupTestRouter(t)
 
 	postReq := httptest.NewRequest(http.MethodPost, "/api/links",
 		bytes.NewBufferString(`{"original_url":"https://example.com/d","short_name":"d"}`))

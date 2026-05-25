@@ -5,8 +5,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Register(r *gin.Engine, links *handler.LinksHandler) {
+func Register(
+	r *gin.Engine,
+	links *handler.LinksHandler,
+	visits *handler.LinkVisitsHandler,
+	redirect *handler.RedirectHandler,
+) {
+	r.TrustedPlatform = gin.PlatformCloudflare
+
 	r.GET("/ping", handler.Ping)
+	r.GET("/r/:code", redirect.Redirect)
 
 	api := r.Group("/api")
 	linksGroup := api.Group("/links")
@@ -17,4 +25,5 @@ func Register(r *gin.Engine, links *handler.LinksHandler) {
 		linksGroup.POST("", links.Create)
 		linksGroup.PUT("/:id", links.Update)
 	}
+	api.GET("/link_visits", visits.GetAll)
 }

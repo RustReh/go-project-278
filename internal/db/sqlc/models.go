@@ -16,3 +16,13 @@ type Link struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
+
+type LinkVisit struct {
+	ID        int64
+	LinkID    int64
+	Ip        string
+	UserAgent string
+	Referer   string
+	Status    int32
+	CreatedAt time.Time
+}
