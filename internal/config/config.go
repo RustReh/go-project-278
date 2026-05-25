@@ -37,13 +37,20 @@ func envOrDefault(key, defaultVal string) string {
 }
 
 func NewAppConfig() (*AppConfig, error) {
-	host := envOrDefault("SERVER_HOST", "localhost")
-	portStr := os.Getenv("PORT")
+	host := envOrDefault("SERVER_HOST", "")
+	portStr := envOrDefault("SERVER_PORT", "")
 	if portStr == "" {
-		portStr = envOrDefault("SERVER_PORT", "8080")
+		portStr = os.Getenv("PORT")
 	}
-	if os.Getenv("PORT") != "" && os.Getenv("SERVER_HOST") == "" {
-		host = "0.0.0.0"
+	if portStr == "" {
+		portStr = "8080"
+	}
+	if host == "" {
+		if os.Getenv("PORT") != "" {
+			host = "0.0.0.0"
+		} else {
+			host = "localhost"
+		}
 	}
 	port, err := strconv.Atoi(portStr)
 	if err != nil {
