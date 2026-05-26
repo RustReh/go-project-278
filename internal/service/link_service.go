@@ -46,7 +46,7 @@ func normalizeBaseURL(base string) string {
 }
 
 func (s *LinkService) buildShortURL(shortName string) (string, error) {
-	shortURL := s.baseURL + strings.TrimSpace(shortName)
+	shortURL := s.baseURL + "r/" + strings.TrimSpace(shortName)
 	if len(shortURL) > maxShortURLLen {
 		return "", apperr.ValidationFields(map[string]string{
 			"short_url": "short_url is too long",

@@ -27,7 +27,7 @@ func TestLinks_Create_WithShortName_201(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 		t.Fatal(err)
 	}
-	if resp.ShortName != "exmpl" || resp.ShortURL != "https://short.io/exmpl" {
+	if resp.ShortName != "exmpl" || resp.ShortURL != "https://short.io/r/exmpl" {
 		t.Fatalf("got %+v", resp)
 	}
 }
@@ -52,7 +52,7 @@ func TestLinks_Create_WithoutShortName_201(t *testing.T) {
 	if resp.ShortName == "" {
 		t.Fatal("expected generated short_name")
 	}
-	if resp.ShortURL != handlerBaseURL+resp.ShortName {
+	if resp.ShortURL != handlerBaseURL+"r/"+resp.ShortName {
 		t.Fatalf("short_url: got %q", resp.ShortURL)
 	}
 }

@@ -37,9 +37,8 @@ func writeAppError(c *gin.Context, err error) {
 		})
 		return
 	case apperr.CodeNotFound:
-		c.JSON(http.StatusNotFound, schemas.ErrorResponse{
-			Code:    string(apperr.CodeNotFound),
-			Message: appErr.Message,
+		c.JSON(http.StatusNotFound, schemas.InvalidRequestResponse{
+			Error: appErr.Message,
 		})
 		return
 	}

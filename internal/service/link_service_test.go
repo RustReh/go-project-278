@@ -33,7 +33,7 @@ func TestCreateLink_WithShortName(t *testing.T) {
 	if link.ShortName != "exmpl" {
 		t.Fatalf("short_name: got %q, want exmpl", link.ShortName)
 	}
-	if link.ShortUrl != "https://short.io/exmpl" {
+	if link.ShortUrl != "https://short.io/r/exmpl" {
 		t.Fatalf("short_url: got %q", link.ShortUrl)
 	}
 }
@@ -54,7 +54,7 @@ func TestCreateLink_WithoutShortName_GeneratesUnique(t *testing.T) {
 	if len(link.ShortName) != 12 {
 		t.Fatalf("generated short_name length: got %d, want 12", len(link.ShortName))
 	}
-	if link.ShortUrl != testBaseURL+link.ShortName {
+	if link.ShortUrl != testBaseURL+"r/"+link.ShortName {
 		t.Fatalf("short_url: got %q", link.ShortUrl)
 	}
 }
@@ -152,7 +152,7 @@ func TestUpdateLink(t *testing.T) {
 	if updated.OriginalUrl != "https://example.com/new" || updated.ShortName != "new" {
 		t.Fatalf("got %+v", updated)
 	}
-	if updated.ShortUrl != "https://short.io/new" {
+	if updated.ShortUrl != "https://short.io/r/new" {
 		t.Fatalf("short_url: %q", updated.ShortUrl)
 	}
 }
