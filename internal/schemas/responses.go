@@ -18,11 +18,6 @@ type ErrorResponse struct {
 	Payload any    `json:"payload,omitempty"`
 }
 
-type CreateUpdateLinkRequest struct {
-	OriginalURL string `json:"original_url"`
-	ShortName   string `json:"short_name"`
-}
-
 type LinkVisitResponse struct {
 	ID        int64  `json:"id"`
 	LinkID    int64  `json:"link_id"`

@@ -18,12 +18,12 @@ func TestLinkVisits_GetAll_WithRangeHeader(t *testing.T) {
 	linkSvc := service.NewLinkService(repo, handlerBaseURL)
 	link, _ := linkSvc.CreateLink(ctx, domain.LinkVO{
 		OriginalUrl: "https://example.com/a",
-		ShortName:   "a",
+		ShortName:   "aaa",
 	})
 
 	visitSvc := service.NewVisitService(repo)
 	for range 3 {
-		if _, _, err := visitSvc.Redirect(ctx, "a", "10.0.0.1", "ua", ""); err != nil {
+		if _, _, err := visitSvc.Redirect(ctx, "aaa", "10.0.0.1", "ua", ""); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -59,9 +59,9 @@ func TestLinkVisits_GetAll_WithQueryRange(t *testing.T) {
 	linkSvc := service.NewLinkService(repo, handlerBaseURL)
 	_, _ = linkSvc.CreateLink(t.Context(), domain.LinkVO{
 		OriginalUrl: "https://example.com/x",
-		ShortName:   "x",
+		ShortName:   "xxx",
 	})
-	_, _, _ = visitSvc.Redirect(t.Context(), "x", "1.1.1.1", "ua", "")
+	_, _, _ = visitSvc.Redirect(t.Context(), "xxx", "1.1.1.1", "ua", "")
 
 	req := httptest.NewRequest(http.MethodGet, "/api/link_visits?range=[0,10]", nil)
 	rec := httptest.NewRecorder()
@@ -72,14 +72,14 @@ func TestLinkVisits_GetAll_WithQueryRange(t *testing.T) {
 	}
 }
 
-func TestLinkVisits_MissingRange_400(t *testing.T) {
+func TestLinkVisits_MissingRange_422(t *testing.T) {
 	r, _ := setupTestRouter(t)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/link_visits", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusBadRequest {
+	if rec.Code != http.StatusUnprocessableEntity {
 		t.Fatalf("status: got %d", rec.Code)
 	}
 }

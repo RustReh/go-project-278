@@ -57,7 +57,7 @@ func TestLinks_Create_WithoutShortName_201(t *testing.T) {
 	}
 }
 
-func TestLinks_Create_Conflict_409(t *testing.T) {
+func TestLinks_Create_Conflict_422(t *testing.T) {
 	r, _ := setupTestRouter(t)
 
 	body := `{"original_url":"https://example.com/1","short_name":"dup"}`
@@ -69,8 +69,15 @@ func TestLinks_Create_Conflict_409(t *testing.T) {
 		if rec.Code == http.StatusCreated {
 			continue
 		}
-		if rec.Code != http.StatusConflict {
+		if rec.Code != http.StatusUnprocessableEntity {
 			t.Fatalf("status: got %d, body: %s", rec.Code, rec.Body.String())
+		}
+		var resp schemas.ValidationErrorsResponse
+		if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+			t.Fatal(err)
+		}
+		if resp.Errors["short_name"] != "short name already in use" {
+			t.Fatalf("errors: %#v", resp.Errors)
 		}
 		return
 	}
@@ -90,8 +97,8 @@ func TestLinks_GetAll_200(t *testing.T) {
 			t.Fatalf("create status %d: %s", rec.Code, rec.Body.String())
 		}
 	}
-	create(`{"original_url":"https://example.com/1","short_name":"a"}`)
-	create(`{"original_url":"https://example.com/2","short_name":"b"}`)
+	create(`{"original_url":"https://example.com/1","short_name":"aaa"}`)
+	create(`{"original_url":"https://example.com/2","short_name":"bbb"}`)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/links?range=[0,10]", nil)
 	rec := httptest.NewRecorder()
@@ -116,7 +123,7 @@ func TestLinks_GetAll_Pagination(t *testing.T) {
 	r, _ := setupTestRouter(t)
 
 	for i := 1; i <= 11; i++ {
-		payload := `{"original_url":"https://example.com/` + string(rune('0'+i%10)) + `","short_name":"l` + string(rune('a'+i-1)) + `"}`
+		payload := `{"original_url":"https://example.com/` + string(rune('0'+i%10)) + `","short_name":"ln` + string(rune('0'+i)) + `"}`
 		req := httptest.NewRequest(http.MethodPost, "/api/links", bytes.NewBufferString(payload))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
@@ -170,15 +177,15 @@ func TestLinks_GetAll_Pagination(t *testing.T) {
 	})
 }
 
-func TestLinks_GetAll_MissingRange_400(t *testing.T) {
+func TestLinks_GetAll_MissingRange_422(t *testing.T) {
 	r, _ := setupTestRouter(t)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/links", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("status: got %d, want 400", rec.Code)
+	if rec.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("status: got %d, want 422", rec.Code)
 	}
 }
 
@@ -186,7 +193,7 @@ func TestLinks_GetByID_200_and_404(t *testing.T) {
 	r, _ := setupTestRouter(t)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/links",
-		bytes.NewBufferString(`{"original_url":"https://example.com/x","short_name":"x"}`))
+		bytes.NewBufferString(`{"original_url":"https://example.com/x","short_name":"xxx"}`))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -238,7 +245,7 @@ func TestLinks_Update_200_and_404(t *testing.T) {
 	}
 
 	missPut := httptest.NewRequest(http.MethodPut, "/api/links/999",
-		bytes.NewBufferString(`{"original_url":"https://example.com/x","short_name":"x"}`))
+		bytes.NewBufferString(`{"original_url":"https://example.com/x","short_name":"xxx"}`))
 	missPut.Header.Set("Content-Type", "application/json")
 	missRec := httptest.NewRecorder()
 	r.ServeHTTP(missRec, missPut)
@@ -251,7 +258,7 @@ func TestLinks_Delete_204_and_404(t *testing.T) {
 	r, _ := setupTestRouter(t)
 
 	postReq := httptest.NewRequest(http.MethodPost, "/api/links",
-		bytes.NewBufferString(`{"original_url":"https://example.com/d","short_name":"d"}`))
+		bytes.NewBufferString(`{"original_url":"https://example.com/d","short_name":"del"}`))
 	postReq.Header.Set("Content-Type", "application/json")
 	postRec := httptest.NewRecorder()
 	r.ServeHTTP(postRec, postReq)

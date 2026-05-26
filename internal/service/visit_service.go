@@ -68,7 +68,7 @@ func (s *VisitService) Redirect(
 func (s *VisitService) ListVisits(ctx context.Context, start, end int) (VisitsPage, error) {
 	limit := end - start
 	if limit < 0 {
-		return VisitsPage{}, apperr.Validation("invalid range", map[string]any{"start": start, "end": end})
+		return VisitsPage{}, apperr.ValidationFields(map[string]string{"range": "invalid range"})
 	}
 
 	total, err := s.repo.CountVisits(ctx)

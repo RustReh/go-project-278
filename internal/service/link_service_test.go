@@ -59,18 +59,6 @@ func TestCreateLink_WithoutShortName_GeneratesUnique(t *testing.T) {
 	}
 }
 
-func TestCreateLink_RequiresOriginalURL(t *testing.T) {
-	svc, _ := newTestService()
-	_, err := svc.CreateLink(context.Background(), domain.LinkVO{ShortName: "x"})
-	if err == nil {
-		t.Fatal("expected error")
-	}
-	appErr, ok := apperr.AsAppError(err)
-	if !ok || appErr.Code != apperr.CodeValidation {
-		t.Fatalf("got %#v", err)
-	}
-}
-
 func TestCreateLink_Conflict(t *testing.T) {
 	svc, _ := newTestService()
 	ctx := context.Background()
@@ -84,8 +72,12 @@ func TestCreateLink_Conflict(t *testing.T) {
 		ShortName:   "dup",
 	})
 	appErr, ok := apperr.AsAppError(err)
-	if !ok || appErr.Code != apperr.CodeConflict {
+	if !ok || appErr.Code != apperr.CodeValidation {
 		t.Fatalf("got %#v", err)
+	}
+	fields := apperr.AsFieldErrors(appErr.Payload)
+	if fields["short_name"] != "short name already in use" {
+		t.Fatalf("fields: %#v", fields)
 	}
 }
 
@@ -103,10 +95,7 @@ func TestListLinks(t *testing.T) {
 	ctx := context.Background()
 
 	for i := 1; i <= 11; i++ {
-		name := string(rune('a' + i - 1))
-		if i > 26 {
-			name = "z"
-		}
+		name := "ln" + string(rune('0'+i))
 		if _, err := svc.CreateLink(ctx, domain.LinkVO{
 			OriginalUrl: "https://example.com/" + name,
 			ShortName:   name,
@@ -176,24 +165,6 @@ func TestUpdateLink_NotFound(t *testing.T) {
 	})
 	appErr, ok := apperr.AsAppError(err)
 	if !ok || appErr.Code != apperr.CodeNotFound {
-		t.Fatalf("got %#v", err)
-	}
-}
-
-func TestUpdateLink_RequiresShortName(t *testing.T) {
-	svc, _ := newTestService()
-	ctx := context.Background()
-
-	created, _ := svc.CreateLink(ctx, domain.LinkVO{
-		OriginalUrl: "https://example.com/x",
-		ShortName:   "x",
-	})
-
-	_, err := svc.UpdateLink(ctx, created.Id, domain.LinkVO{
-		OriginalUrl: "https://example.com/y",
-	})
-	appErr, ok := apperr.AsAppError(err)
-	if !ok || appErr.Code != apperr.CodeValidation {
 		t.Fatalf("got %#v", err)
 	}
 }

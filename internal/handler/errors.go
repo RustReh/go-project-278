@@ -23,27 +23,33 @@ func writeAppError(c *gin.Context, err error) {
 		return
 	}
 
-	status := http.StatusInternalServerError
 	switch appErr.Code {
-	case apperr.CodeNotFound:
-		status = http.StatusNotFound
 	case apperr.CodeValidation:
-		status = http.StatusBadRequest
+		fields := apperr.AsFieldErrors(appErr.Payload)
+		if len(fields) == 0 {
+			fields = map[string]string{"_": appErr.Message}
+		}
+		writeValidationErrors(c, fields)
+		return
 	case apperr.CodeConflict:
-		status = http.StatusConflict
+		writeValidationErrors(c, map[string]string{
+			"short_name": "short name already in use",
+		})
+		return
+	case apperr.CodeNotFound:
+		c.JSON(http.StatusNotFound, schemas.ErrorResponse{
+			Code:    string(apperr.CodeNotFound),
+			Message: appErr.Message,
+		})
+		return
 	}
 
-	payload := appErr.Payload
-	if status >= http.StatusInternalServerError {
-		log.Printf("internal error [%s]: %s: %v", appErr.Code, appErr.Message, appErr.Err)
-		captureSentry(c, appErr)
-		payload = apperr.PayloadWithDetail(payload, appErr.Err)
-	}
-
-	c.JSON(status, schemas.ErrorResponse{
-		Code:    string(appErr.Code),
+	log.Printf("internal error [%s]: %s: %v", appErr.Code, appErr.Message, appErr.Err)
+	captureSentry(c, appErr)
+	c.JSON(http.StatusInternalServerError, schemas.ErrorResponse{
+		Code:    string(apperr.CodeInternal),
 		Message: appErr.Message,
-		Payload: payload,
+		Payload: apperr.PayloadWithDetail(appErr.Payload, appErr.Err),
 	})
 }
 

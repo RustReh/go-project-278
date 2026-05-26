@@ -11,7 +11,7 @@ import (
 func parsePathInt64(raw string) (int64, error) {
 	id, err := strconv.ParseInt(raw, 10, 64)
 	if err != nil || id <= 0 {
-		return 0, apperr.Validation("invalid id", map[string]any{"id": raw})
+		return 0, apperr.ValidationFields(map[string]string{"id": "invalid id"})
 	}
 	return id, nil
 }
@@ -25,9 +25,16 @@ func toLinkResponse(link domain.Link) schemas.LinkResponse {
 	}
 }
 
-func linkToVO(l schemas.CreateUpdateLinkRequest) domain.LinkVO {
+func linkVOFromCreate(p createLinkPayload) domain.LinkVO {
 	return domain.LinkVO{
-		ShortName:   l.ShortName,
-		OriginalUrl: l.OriginalURL,
+		OriginalUrl: p.OriginalURL,
+		ShortName:   p.ShortName,
+	}
+}
+
+func linkVOFromUpdate(p updateLinkPayload) domain.LinkVO {
+	return domain.LinkVO{
+		OriginalUrl: p.OriginalURL,
+		ShortName:   p.ShortName,
 	}
 }

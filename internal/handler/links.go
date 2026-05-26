@@ -3,7 +3,6 @@ package handler
 import (
 	"net/http"
 
-	"github.com/RustReh/go-project-278/internal/apperr"
 	"github.com/RustReh/go-project-278/internal/schemas"
 	"github.com/RustReh/go-project-278/internal/service"
 	"github.com/gin-gonic/gin"
@@ -75,13 +74,12 @@ func (h *LinksHandler) GetByID(c *gin.Context) {
 
 // Create — POST /api/links
 func (h *LinksHandler) Create(c *gin.Context) {
-	var req schemas.CreateUpdateLinkRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		writeAppError(c, apperr.Validation("invalid JSON", map[string]string{"method": "create_link"}))
+	var req createLinkPayload
+	if !bindJSON(c, &req) {
 		return
 	}
 
-	link, err := h.service.CreateLink(c.Request.Context(), linkToVO(req))
+	link, err := h.service.CreateLink(c.Request.Context(), linkVOFromCreate(req))
 	if err != nil {
 		writeAppError(c, err)
 		return
@@ -98,13 +96,12 @@ func (h *LinksHandler) Update(c *gin.Context) {
 		return
 	}
 
-	var req schemas.CreateUpdateLinkRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		writeAppError(c, apperr.Validation("invalid JSON", map[string]string{"method": "update_link"}))
+	var req updateLinkPayload
+	if !bindJSON(c, &req) {
 		return
 	}
 
-	link, err := h.service.UpdateLink(c.Request.Context(), id, linkToVO(req))
+	link, err := h.service.UpdateLink(c.Request.Context(), id, linkVOFromUpdate(req))
 	if err != nil {
 		writeAppError(c, err)
 		return

@@ -15,8 +15,6 @@ import (
 )
 
 const (
-	maxOriginalURLLen       = 2048
-	maxShortNameLen         = 64
 	maxShortURLLen          = 512
 	generatedShortNameLen   = 12
 	generateShortNameMaxTry = 10
@@ -50,13 +48,9 @@ func normalizeBaseURL(base string) string {
 func (s *LinkService) buildShortURL(shortName string) (string, error) {
 	shortURL := s.baseURL + strings.TrimSpace(shortName)
 	if len(shortURL) > maxShortURLLen {
-		return "", apperr.Validation(
-			"short_url is too long",
-			map[string]any{
-				"max_length": maxShortURLLen,
-				"short_url":  shortURL,
-			},
-		)
+		return "", apperr.ValidationFields(map[string]string{
+			"short_url": "short_url is too long",
+		})
 	}
 	return shortURL, nil
 }
@@ -71,59 +65,6 @@ func (s *LinkService) toShortenedVO(linkVO domain.LinkVO) (domain.LinkShortenedV
 		ShortName:   strings.TrimSpace(linkVO.ShortName),
 		ShortUrl:    shortURL,
 	}, nil
-}
-
-func validateCreateLinkVO(vo domain.LinkVO) error {
-	original := strings.TrimSpace(vo.OriginalUrl)
-	shortName := strings.TrimSpace(vo.ShortName)
-
-	if original == "" {
-		return apperr.Validation(
-			"original_url is required",
-			map[string]any{"original_url": vo.OriginalUrl},
-		)
-	}
-	if len(original) > maxOriginalURLLen {
-		return apperr.Validation(
-			"original_url is too long",
-			map[string]any{"max_length": maxOriginalURLLen},
-		)
-	}
-	if shortName != "" && len(shortName) > maxShortNameLen {
-		return apperr.Validation(
-			"short_name is too long",
-			map[string]any{"max_length": maxShortNameLen},
-		)
-	}
-	return nil
-}
-
-func validateUpdateLinkVO(vo domain.LinkVO) error {
-	original := strings.TrimSpace(vo.OriginalUrl)
-	shortName := strings.TrimSpace(vo.ShortName)
-
-	if original == "" || shortName == "" {
-		return apperr.Validation(
-			"original_url and short_name are required",
-			map[string]any{
-				"original_url": vo.OriginalUrl,
-				"short_name":   vo.ShortName,
-			},
-		)
-	}
-	if len(original) > maxOriginalURLLen {
-		return apperr.Validation(
-			"original_url is too long",
-			map[string]any{"max_length": maxOriginalURLLen},
-		)
-	}
-	if len(shortName) > maxShortNameLen {
-		return apperr.Validation(
-			"short_name is too long",
-			map[string]any{"max_length": maxShortNameLen},
-		)
-	}
-	return nil
 }
 
 func generateShortName() (string, error) {
@@ -141,10 +82,12 @@ func generateShortName() (string, error) {
 func mapCreateUpdateErr(err error, link domain.Link, shortName string) (domain.Link, error) {
 	switch {
 	case errors.Is(err, repository.ErrConflict):
-		return link, apperr.Conflict("Link with this short_name already exists")
+		return link, apperr.ValidationFields(map[string]string{
+			"short_name": "short name already in use",
+		})
 	case errors.Is(err, repository.ErrInvalidInput):
-		return link, apperr.Validation("Invalid link data", map[string]any{
-			"short_name": shortName,
+		return link, apperr.ValidationFields(map[string]string{
+			"short_name": "invalid link data",
 		})
 	default:
 		return link, apperr.WithPayload(
@@ -158,7 +101,7 @@ func mapCreateUpdateErr(err error, link domain.Link, shortName string) (domain.L
 
 func (s *LinkService) GetLinkByID(ctx context.Context, id int64) (domain.Link, error) {
 	if id <= 0 {
-		return domain.Link{}, apperr.Validation("invalid link id", map[string]any{"link_id": id})
+		return domain.Link{}, apperr.ValidationFields(map[string]string{"id": "invalid link id"})
 	}
 
 	link, err := s.repo.GetByID(ctx, id)
@@ -188,7 +131,7 @@ type LinksPage struct {
 func (s *LinkService) ListLinks(ctx context.Context, start, end int) (LinksPage, error) {
 	limit := end - start
 	if limit < 0 {
-		return LinksPage{}, apperr.Validation("invalid range", map[string]any{"start": start, "end": end})
+		return LinksPage{}, apperr.ValidationFields(map[string]string{"range": "invalid range"})
 	}
 
 	total, err := s.repo.Count(ctx)
@@ -255,10 +198,6 @@ func (s *LinkService) createWithGeneratedShortName(ctx context.Context, linkVO d
 }
 
 func (s *LinkService) CreateLink(ctx context.Context, linkVO domain.LinkVO) (domain.Link, error) {
-	if err := validateCreateLinkVO(linkVO); err != nil {
-		return domain.Link{}, err
-	}
-
 	linkVO.OriginalUrl = strings.TrimSpace(linkVO.OriginalUrl)
 	linkVO.ShortName = strings.TrimSpace(linkVO.ShortName)
 
@@ -281,12 +220,8 @@ func (s *LinkService) CreateLink(ctx context.Context, linkVO domain.LinkVO) (dom
 
 func (s *LinkService) UpdateLink(ctx context.Context, id int64, linkVO domain.LinkVO) (domain.Link, error) {
 	if id <= 0 {
-		return domain.Link{}, apperr.Validation("invalid link id", map[string]any{"link_id": id})
+		return domain.Link{}, apperr.ValidationFields(map[string]string{"id": "invalid link id"})
 	}
-	if err := validateUpdateLinkVO(linkVO); err != nil {
-		return domain.Link{}, err
-	}
-
 	linkVO.OriginalUrl = strings.TrimSpace(linkVO.OriginalUrl)
 	linkVO.ShortName = strings.TrimSpace(linkVO.ShortName)
 
