@@ -36,4 +36,4 @@ jobs:
           version: v2.11.4
 
       - name: Build
-        run: go build -v -o bin/server ./cmd/server
+        run: go build -v -o bin/server .
