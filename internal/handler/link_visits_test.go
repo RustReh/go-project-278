@@ -17,7 +17,7 @@ func TestLinkVisits_GetAll_WithRangeHeader(t *testing.T) {
 
 	linkSvc := service.NewLinkService(repo, handlerBaseURL)
 	link, _ := linkSvc.CreateLink(ctx, domain.LinkVO{
-		OriginalUrl: "https://example.com/a",
+		OriginalURL: "https://example.com/a",
 		ShortName:   "aaa",
 	})
 
@@ -47,7 +47,7 @@ func TestLinkVisits_GetAll_WithRangeHeader(t *testing.T) {
 	if len(resp) != 2 {
 		t.Fatalf("len: got %d, want 2", len(resp))
 	}
-	if resp[0].LinkID != link.Id || resp[0].Status != 302 {
+	if resp[0].LinkID != link.ID || resp[0].Status != 302 {
 		t.Fatalf("first visit: %+v", resp[0])
 	}
 }
@@ -58,7 +58,7 @@ func TestLinkVisits_GetAll_WithQueryRange(t *testing.T) {
 
 	linkSvc := service.NewLinkService(repo, handlerBaseURL)
 	_, _ = linkSvc.CreateLink(t.Context(), domain.LinkVO{
-		OriginalUrl: "https://example.com/x",
+		OriginalURL: "https://example.com/x",
 		ShortName:   "xxx",
 	})
 	_, _, _ = visitSvc.Redirect(t.Context(), "xxx", "1.1.1.1", "ua", "")
@@ -72,14 +72,14 @@ func TestLinkVisits_GetAll_WithQueryRange(t *testing.T) {
 	}
 }
 
-func TestLinkVisits_MissingRange_422(t *testing.T) {
+func TestLinkVisits_MissingRange_200(t *testing.T) {
 	r, _ := setupTestRouter(t)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/link_visits", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusUnprocessableEntity {
+	if rec.Code != http.StatusOK {
 		t.Fatalf("status: got %d", rec.Code)
 	}
 }

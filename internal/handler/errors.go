@@ -18,7 +18,6 @@ func writeAppError(c *gin.Context, err error) {
 		c.JSON(http.StatusInternalServerError, schemas.ErrorResponse{
 			Code:    string(apperr.CodeInternal),
 			Message: "internal server error",
-			Payload: map[string]any{"detail": apperr.RootCause(err)},
 		})
 		return
 	}
@@ -47,8 +46,7 @@ func writeAppError(c *gin.Context, err error) {
 	captureSentry(c, appErr)
 	c.JSON(http.StatusInternalServerError, schemas.ErrorResponse{
 		Code:    string(apperr.CodeInternal),
-		Message: appErr.Message,
-		Payload: apperr.PayloadWithDetail(appErr.Payload, appErr.Err),
+		Message: "internal server error",
 	})
 }
 

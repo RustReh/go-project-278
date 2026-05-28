@@ -47,7 +47,7 @@ func (s *VisitService) Redirect(
 	}
 
 	_, err = s.repo.CreateVisit(ctx, domain.LinkVisitVO{
-		LinkId:    link.Id,
+		LinkId:    link.ID,
 		Ip:        ip,
 		UserAgent: userAgent,
 		Referer:   referer,
@@ -57,12 +57,12 @@ func (s *VisitService) Redirect(
 		return "", 0, apperr.WithPayload(
 			apperr.CodeInternal,
 			"Error while create link visit",
-			map[string]any{"link_id": link.Id},
+			map[string]any{"link_id": link.ID},
 			err,
 		)
 	}
 
-	return link.OriginalUrl, redirectStatus, nil
+	return link.OriginalURL, redirectStatus, nil
 }
 
 func (s *VisitService) ListVisits(ctx context.Context, start, end int) (VisitsPage, error) {

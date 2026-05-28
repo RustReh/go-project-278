@@ -177,15 +177,15 @@ func TestLinks_GetAll_Pagination(t *testing.T) {
 	})
 }
 
-func TestLinks_GetAll_MissingRange_422(t *testing.T) {
+func TestLinks_GetAll_MissingRange_200(t *testing.T) {
 	r, _ := setupTestRouter(t)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/links", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusUnprocessableEntity {
-		t.Fatalf("status: got %d, want 422", rec.Code)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status: got %d, want 200", rec.Code)
 	}
 }
 

@@ -30,19 +30,8 @@ type LinkService struct {
 func NewLinkService(repo interfaces.Repository, baseURL string) *LinkService {
 	return &LinkService{
 		repo:    repo,
-		baseURL: normalizeBaseURL(baseURL),
+		baseURL: baseURL,
 	}
-}
-
-func normalizeBaseURL(base string) string {
-	base = strings.TrimSpace(base)
-	if base == "" {
-		return ""
-	}
-	if !strings.HasSuffix(base, "/") {
-		base += "/"
-	}
-	return base
 }
 
 func (s *LinkService) buildShortURL(shortName string) (string, error) {
@@ -61,9 +50,9 @@ func (s *LinkService) toShortenedVO(linkVO domain.LinkVO) (domain.LinkShortenedV
 		return domain.LinkShortenedVO{}, err
 	}
 	return domain.LinkShortenedVO{
-		OriginalUrl: strings.TrimSpace(linkVO.OriginalUrl),
+		OriginalURL: strings.TrimSpace(linkVO.OriginalURL),
 		ShortName:   strings.TrimSpace(linkVO.ShortName),
-		ShortUrl:    shortURL,
+		ShortURL:    shortURL,
 	}, nil
 }
 
@@ -198,7 +187,7 @@ func (s *LinkService) createWithGeneratedShortName(ctx context.Context, linkVO d
 }
 
 func (s *LinkService) CreateLink(ctx context.Context, linkVO domain.LinkVO) (domain.Link, error) {
-	linkVO.OriginalUrl = strings.TrimSpace(linkVO.OriginalUrl)
+	linkVO.OriginalURL = strings.TrimSpace(linkVO.OriginalURL)
 	linkVO.ShortName = strings.TrimSpace(linkVO.ShortName)
 
 	if linkVO.ShortName == "" {
@@ -222,7 +211,7 @@ func (s *LinkService) UpdateLink(ctx context.Context, id int64, linkVO domain.Li
 	if id <= 0 {
 		return domain.Link{}, apperr.ValidationFields(map[string]string{"id": "invalid link id"})
 	}
-	linkVO.OriginalUrl = strings.TrimSpace(linkVO.OriginalUrl)
+	linkVO.OriginalURL = strings.TrimSpace(linkVO.OriginalURL)
 	linkVO.ShortName = strings.TrimSpace(linkVO.ShortName)
 
 	shortened, err := s.toShortenedVO(linkVO)

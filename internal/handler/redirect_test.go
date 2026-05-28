@@ -14,7 +14,7 @@ func TestRedirect_302_and_records_visit(t *testing.T) {
 
 	linkSvc := service.NewLinkService(repo, handlerBaseURL)
 	_, err := linkSvc.CreateLink(t.Context(), domain.LinkVO{
-		OriginalUrl: "https://example.com/target",
+		OriginalURL: "https://example.com/target",
 		ShortName:   "abc",
 	})
 	if err != nil {

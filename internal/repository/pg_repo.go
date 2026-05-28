@@ -17,10 +17,10 @@ type PostgresRepo struct {
 
 func toDomain(dbLink sqlc.Link) domain.Link {
 	return domain.Link{
-		Id:          dbLink.ID,
-		OriginalUrl: dbLink.OriginalUrl,
+		ID:          dbLink.ID,
+		OriginalURL: dbLink.OriginalUrl,
 		ShortName:   dbLink.ShortName,
-		ShortUrl:    dbLink.ShortUrl,
+		ShortURL:    dbLink.ShortUrl,
 	}
 }
 
@@ -84,9 +84,9 @@ func (repo *PostgresRepo) List(ctx context.Context, offset, limit int) ([]domain
 
 func (repo *PostgresRepo) Create(ctx context.Context, vo domain.LinkShortenedVO) (domain.Link, error) {
 	link, err := repo.q.CreateLink(ctx, sqlc.CreateLinkParams{
-		OriginalUrl: vo.OriginalUrl,
+		OriginalUrl: vo.OriginalURL,
 		ShortName:   vo.ShortName,
-		ShortUrl:    vo.ShortUrl,
+		ShortUrl:    vo.ShortURL,
 	})
 	if err != nil {
 		return domain.Link{}, MapError(err)
@@ -97,9 +97,9 @@ func (repo *PostgresRepo) Create(ctx context.Context, vo domain.LinkShortenedVO)
 func (repo *PostgresRepo) Update(ctx context.Context, id int64, vo domain.LinkShortenedVO) (domain.Link, error) {
 	link, err := repo.q.UpdateLink(ctx, sqlc.UpdateLinkParams{
 		ID:          id,
-		OriginalUrl: vo.OriginalUrl,
+		OriginalUrl: vo.OriginalURL,
 		ShortName:   vo.ShortName,
-		ShortUrl:    vo.ShortUrl,
+		ShortUrl:    vo.ShortURL,
 	})
 	if err != nil {
 		return domain.Link{}, MapError(err)

@@ -49,5 +49,6 @@ func parseListRange(queryRange, headerRange string) (start, end int, err error) 
 			return start, end, nil
 		}
 	}
-	return 0, 0, apperr.ValidationFields(map[string]string{"range": "range is required"})
+	// range — опциональный параметр; если его нет, отдаём первую страницу (react-admin так делает).
+	return 0, 1000, nil
 }

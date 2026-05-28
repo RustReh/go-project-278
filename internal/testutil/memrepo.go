@@ -29,7 +29,7 @@ func (m *MemRepo) sortedLinks() []domain.Link {
 	for _, link := range m.links {
 		out = append(out, link)
 	}
-	sort.Slice(out, func(i, j int) bool { return out[i].Id < out[j].Id })
+	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
 	return out
 }
 
@@ -84,12 +84,12 @@ func (m *MemRepo) Create(_ context.Context, vo domain.LinkShortenedVO) (domain.L
 
 	m.seq++
 	link := domain.Link{
-		Id:          m.seq,
-		OriginalUrl: vo.OriginalUrl,
+		ID:          m.seq,
+		OriginalURL: vo.OriginalURL,
 		ShortName:   vo.ShortName,
-		ShortUrl:    vo.ShortUrl,
+		ShortURL:    vo.ShortURL,
 	}
-	m.links[link.Id] = link
+	m.links[link.ID] = link
 	return link, nil
 }
 
@@ -99,16 +99,16 @@ func (m *MemRepo) Update(_ context.Context, id int64, vo domain.LinkShortenedVO)
 	}
 
 	for _, link := range m.links {
-		if link.Id != id && link.ShortName == vo.ShortName {
+		if link.ID != id && link.ShortName == vo.ShortName {
 			return domain.Link{}, repository.ErrConflict
 		}
 	}
 
 	link := domain.Link{
-		Id:          id,
-		OriginalUrl: vo.OriginalUrl,
+		ID:          id,
+		OriginalURL: vo.OriginalURL,
 		ShortName:   vo.ShortName,
-		ShortUrl:    vo.ShortUrl,
+		ShortURL:    vo.ShortURL,
 	}
 	m.links[id] = link
 	return link, nil

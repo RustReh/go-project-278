@@ -18,23 +18,23 @@ func parsePathInt64(raw string) (int64, error) {
 
 func toLinkResponse(link domain.Link) schemas.LinkResponse {
 	return schemas.LinkResponse{
-		ID:          link.Id,
-		OriginalURL: link.OriginalUrl,
+		ID:          link.ID,
+		OriginalURL: link.OriginalURL,
 		ShortName:   link.ShortName,
-		ShortURL:    link.ShortUrl,
+		ShortURL:    link.ShortURL,
 	}
 }
 
 func linkVOFromCreate(p createLinkPayload) domain.LinkVO {
 	return domain.LinkVO{
-		OriginalUrl: p.OriginalURL,
+		OriginalURL: p.OriginalURL,
 		ShortName:   p.ShortName,
 	}
 }
 
 func linkVOFromUpdate(p updateLinkPayload) domain.LinkVO {
 	return domain.LinkVO{
-		OriginalUrl: p.OriginalURL,
+		OriginalURL: p.OriginalURL,
 		ShortName:   p.ShortName,
 	}
 }

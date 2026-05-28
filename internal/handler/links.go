@@ -18,7 +18,7 @@ func NewLinksHandler(linkService *service.LinkService) *LinksHandler {
 
 // GetAll — GET /api/links?range=[start,end]
 func (h *LinksHandler) GetAll(c *gin.Context) {
-	start, end, err := parseRangeQuery(c.Query("range"))
+	start, end, err := parseListRange(c.Query("range"), c.GetHeader("Range"))
 	if err != nil {
 		writeAppError(c, err)
 		return

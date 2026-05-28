@@ -24,7 +24,7 @@ func TestCreateLink_WithShortName(t *testing.T) {
 	ctx := context.Background()
 
 	link, err := svc.CreateLink(ctx, domain.LinkVO{
-		OriginalUrl: "https://example.com/a",
+		OriginalURL: "https://example.com/a",
 		ShortName:   "exmpl",
 	})
 	if err != nil {
@@ -33,8 +33,8 @@ func TestCreateLink_WithShortName(t *testing.T) {
 	if link.ShortName != "exmpl" {
 		t.Fatalf("short_name: got %q, want exmpl", link.ShortName)
 	}
-	if link.ShortUrl != "https://short.io/r/exmpl" {
-		t.Fatalf("short_url: got %q", link.ShortUrl)
+	if link.ShortURL != "https://short.io/r/exmpl" {
+		t.Fatalf("short_url: got %q", link.ShortURL)
 	}
 }
 
@@ -43,7 +43,7 @@ func TestCreateLink_WithoutShortName_GeneratesUnique(t *testing.T) {
 	ctx := context.Background()
 
 	link, err := svc.CreateLink(ctx, domain.LinkVO{
-		OriginalUrl: "https://example.com/auto",
+		OriginalURL: "https://example.com/auto",
 	})
 	if err != nil {
 		t.Fatalf("CreateLink: %v", err)
@@ -54,21 +54,21 @@ func TestCreateLink_WithoutShortName_GeneratesUnique(t *testing.T) {
 	if len(link.ShortName) != 12 {
 		t.Fatalf("generated short_name length: got %d, want 12", len(link.ShortName))
 	}
-	if link.ShortUrl != testBaseURL+"r/"+link.ShortName {
-		t.Fatalf("short_url: got %q", link.ShortUrl)
+	if link.ShortURL != testBaseURL+"r/"+link.ShortName {
+		t.Fatalf("short_url: got %q", link.ShortURL)
 	}
 }
 
 func TestCreateLink_Conflict(t *testing.T) {
 	svc, _ := newTestService()
 	ctx := context.Background()
-	vo := domain.LinkVO{OriginalUrl: "https://example.com/1", ShortName: "dup"}
+	vo := domain.LinkVO{OriginalURL: "https://example.com/1", ShortName: "dup"}
 
 	if _, err := svc.CreateLink(ctx, vo); err != nil {
 		t.Fatalf("first create: %v", err)
 	}
 	_, err := svc.CreateLink(ctx, domain.LinkVO{
-		OriginalUrl: "https://example.com/2",
+		OriginalURL: "https://example.com/2",
 		ShortName:   "dup",
 	})
 	appErr, ok := apperr.AsAppError(err)
@@ -97,7 +97,7 @@ func TestListLinks(t *testing.T) {
 	for i := 1; i <= 11; i++ {
 		name := "ln" + string(rune('0'+i))
 		if _, err := svc.CreateLink(ctx, domain.LinkVO{
-			OriginalUrl: "https://example.com/" + name,
+			OriginalURL: "https://example.com/" + name,
 			ShortName:   name,
 		}); err != nil {
 			t.Fatal(err)
@@ -114,8 +114,8 @@ func TestListLinks(t *testing.T) {
 	if len(page.Links) != 10 {
 		t.Fatalf("len: got %d, want 10", len(page.Links))
 	}
-	if page.Links[0].Id != 1 || page.Links[9].Id != 10 {
-		t.Fatalf("ids: first=%d last=%d", page.Links[0].Id, page.Links[9].Id)
+	if page.Links[0].ID != 1 || page.Links[9].ID != 10 {
+		t.Fatalf("ids: first=%d last=%d", page.Links[0].ID, page.Links[9].ID)
 	}
 
 	page2, err := svc.ListLinks(ctx, 5, 10)
@@ -125,8 +125,8 @@ func TestListLinks(t *testing.T) {
 	if len(page2.Links) != 5 {
 		t.Fatalf("page2 len: got %d, want 5", len(page2.Links))
 	}
-	if page2.Links[0].Id != 6 || page2.Links[4].Id != 10 {
-		t.Fatalf("page2 ids: first=%d last=%d", page2.Links[0].Id, page2.Links[4].Id)
+	if page2.Links[0].ID != 6 || page2.Links[4].ID != 10 {
+		t.Fatalf("page2 ids: first=%d last=%d", page2.Links[0].ID, page2.Links[4].ID)
 	}
 }
 
@@ -135,32 +135,32 @@ func TestUpdateLink(t *testing.T) {
 	ctx := context.Background()
 
 	created, err := svc.CreateLink(ctx, domain.LinkVO{
-		OriginalUrl: "https://example.com/old",
+		OriginalURL: "https://example.com/old",
 		ShortName:   "old",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	updated, err := svc.UpdateLink(ctx, created.Id, domain.LinkVO{
-		OriginalUrl: "https://example.com/new",
+	updated, err := svc.UpdateLink(ctx, created.ID, domain.LinkVO{
+		OriginalURL: "https://example.com/new",
 		ShortName:   "new",
 	})
 	if err != nil {
 		t.Fatalf("UpdateLink: %v", err)
 	}
-	if updated.OriginalUrl != "https://example.com/new" || updated.ShortName != "new" {
+	if updated.OriginalURL != "https://example.com/new" || updated.ShortName != "new" {
 		t.Fatalf("got %+v", updated)
 	}
-	if updated.ShortUrl != "https://short.io/r/new" {
-		t.Fatalf("short_url: %q", updated.ShortUrl)
+	if updated.ShortURL != "https://short.io/r/new" {
+		t.Fatalf("short_url: %q", updated.ShortURL)
 	}
 }
 
 func TestUpdateLink_NotFound(t *testing.T) {
 	svc, _ := newTestService()
 	_, err := svc.UpdateLink(context.Background(), 42, domain.LinkVO{
-		OriginalUrl: "https://example.com/x",
+		OriginalURL: "https://example.com/x",
 		ShortName:   "x",
 	})
 	appErr, ok := apperr.AsAppError(err)
@@ -174,14 +174,14 @@ func TestDeleteLink(t *testing.T) {
 	ctx := context.Background()
 
 	created, _ := svc.CreateLink(ctx, domain.LinkVO{
-		OriginalUrl: "https://example.com/del",
+		OriginalURL: "https://example.com/del",
 		ShortName:   "del",
 	})
 
-	if err := svc.DeleteLink(ctx, created.Id); err != nil {
+	if err := svc.DeleteLink(ctx, created.ID); err != nil {
 		t.Fatalf("DeleteLink: %v", err)
 	}
-	_, err := svc.GetLinkByID(ctx, created.Id)
+	_, err := svc.GetLinkByID(ctx, created.ID)
 	appErr, ok := apperr.AsAppError(err)
 	if !ok || appErr.Code != apperr.CodeNotFound {
 		t.Fatalf("got %#v", err)
@@ -201,9 +201,9 @@ func TestMemRepo_ConflictFromRepository(t *testing.T) {
 	repo := testutil.NewMemRepo()
 	ctx := context.Background()
 	vo := domain.LinkShortenedVO{
-		OriginalUrl: "https://example.com",
+		OriginalURL: "https://example.com",
 		ShortName:   "c",
-		ShortUrl:    "https://short.io/c",
+		ShortURL:    "https://short.io/c",
 	}
 	if _, err := repo.Create(ctx, vo); err != nil {
 		t.Fatal(err)

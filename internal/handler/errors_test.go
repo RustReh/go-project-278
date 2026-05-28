@@ -12,7 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func TestWriteAppError_IncludesDetailForInternal(t *testing.T) {
+func TestWriteAppError_DoesNotLeakInternalDetails(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	c, rec := newTestContext()
@@ -32,16 +32,11 @@ func TestWriteAppError_IncludesDetailForInternal(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
 		t.Fatal(err)
 	}
-	payload, ok := body["payload"].(map[string]any)
-	if !ok {
-		t.Fatalf("payload: %#v", body["payload"])
+	if body["payload"] != nil {
+		t.Fatalf("expected no payload, got %#v", body["payload"])
 	}
-	detail, ok := payload["detail"].(string)
-	if !ok || detail == "" {
-		t.Fatalf("expected detail in payload, got %#v", payload)
-	}
-	if payload["short_name"] != "abc" {
-		t.Fatalf("expected short_name preserved, got %#v", payload)
+	if body["message"] != "internal server error" {
+		t.Fatalf("message: %#v", body["message"])
 	}
 }
 

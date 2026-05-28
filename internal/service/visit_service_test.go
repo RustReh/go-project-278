@@ -18,7 +18,7 @@ func TestVisitService_Redirect(t *testing.T) {
 	ctx := context.Background()
 
 	_, err := linkSvc.CreateLink(ctx, domain.LinkVO{
-		OriginalUrl: "https://example.com/go",
+		OriginalURL: "https://example.com/go",
 		ShortName:   "go",
 	})
 	if err != nil {

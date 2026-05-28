@@ -1,19 +1,19 @@
 package domain
 
 type Link struct {
-	Id          int64
-	OriginalUrl string
+	ID          int64
+	OriginalURL string
 	ShortName   string
-	ShortUrl    string
+	ShortURL    string
 }
 
 type LinkVO struct {
-	OriginalUrl string
+	OriginalURL string
 	ShortName   string
 }
 
 type LinkShortenedVO struct {
-	OriginalUrl string
+	OriginalURL string
 	ShortName   string
-	ShortUrl    string
+	ShortURL    string
 }

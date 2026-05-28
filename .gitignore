@@ -4,5 +4,7 @@
 # Собранные бинарники — не коммитим; bin/run.sh — в репозитории
 bin/*
 !bin/run.sh
+server
+go-project-278
 
 node_modules/

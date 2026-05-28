@@ -62,6 +62,16 @@ func TestParseListRange_FallsBackToHeader(t *testing.T) {
 	}
 }
 
+func TestParseListRange_DefaultsWhenEmpty(t *testing.T) {
+	start, end, err := parseListRange("", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if start != 0 || end != 1000 {
+		t.Fatalf("got [%d,%d), want [0,1000)", start, end)
+	}
+}
+
 func TestContentRangeHeader(t *testing.T) {
 	got := contentRangeHeader("links", 0, 10, 42)
 	want := "links 0-10/42"
